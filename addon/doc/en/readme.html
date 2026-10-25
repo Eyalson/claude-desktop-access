@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Claude Desktop Access</title>
+<style>
+  body { font-family: "Segoe UI", Arial, sans-serif; line-height: 1.6; max-width: 46rem; margin: 1.5rem auto; padding: 0 1rem; }
+  kbd { font-family: Consolas, monospace; border: 1px solid #888; border-radius: 4px; padding: 0 .35em; }
+  table { border-collapse: collapse; width: 100%; }
+  th, td { border: 1px solid #888; padding: .4rem .6rem; text-align: left; vertical-align: top; }
+</style>
+</head>
+<body>
+<main>
+<h1>Claude Desktop Access</h1>
+<p>An NVDA add-on for Claude Desktop on Windows. It closes Claude's side panels with one keyboard shortcut, without hovering with the mouse and without searching for the Close button.</p>
+
+<h2>Commands</h2>
+<table>
+  <caption>Keyboard commands</caption>
+  <thead><tr><th scope="col">Keys</th><th scope="col">Action</th></tr></thead>
+  <tbody>
+    <tr><td><kbd>Ctrl+Shift+J</kbd></td><td>Closes a panel. See "Which panel closes" below.</td></tr>
+    <tr><td><kbd>NVDA+Ctrl+Shift+J</kbd></td><td>Writes diagnostics to the NVDA log. Use it when a panel is open but the add-on does not find it.</td></tr>
+  </tbody>
+</table>
+<p>Both commands can be given other keys in NVDA's Input Gestures dialog, under "Claude Desktop Access".</p>
+
+<h2>Which panel closes</h2>
+<table>
+  <caption>What Ctrl+Shift+J does</caption>
+  <thead><tr><th scope="col">When you press it</th><th scope="col">What happens</th></tr></thead>
+  <tbody>
+    <tr><td>The focus is inside a panel: the artifact panel, Session details or a split view</td><td>That panel closes.</td></tr>
+    <tr><td>The focus is outside the panels, for example in the prompt or the chat, and one panel is open</td><td>That panel closes.</td></tr>
+    <tr><td>The focus is outside the panels and two or more panels are open</td><td>A list of the open panels opens. Enter closes the selected panel and Escape closes the list.</td></tr>
+    <tr><td>No panel is open</td><td>NVDA announces "No panel to close".</td></tr>
+  </tbody>
+</table>
+<p>The Browser panel shows a web page of its own, so the add-on cannot tell from inside it which panel the page belongs to. When the focus is in the Browser panel and other panels are open too, the list opens with Browser already selected, so Enter closes it.</p>
+<p>After a panel closes, NVDA announces "Closed" and the name of the panel, and the focus returns to where it was before you entered the panel.</p>
+
+<h2>Panels the add-on knows</h2>
+<ul>
+  <li>Panels with a Close button, such as the artifact panel, the Browser panel and split views.</li>
+  <li>Session details, which has no Close button. The add-on presses its toggle button, "Session rail", in the "Session tools" toolbar.</li>
+</ul>
+
+<h2>Requirements</h2>
+<p>NVDA 2026.1 or later, tested with NVDA 2026.2. Claude Desktop for Windows. The add-on works only while Claude has the focus.</p>
+
+<h2>Known limits</h2>
+<ul>
+  <li>The Terminal, Changes and Files toggle buttons have not been tested as a way to close their panels.</li>
+  <li>After Session details closes, the focus is not moved back.</li>
+  <li>If Claude changes the structure of its interface, the add-on may stop finding a panel. NVDA+Ctrl+Shift+J then shows in the log what NVDA sees.</li>
+</ul>
+
+<h2>What is written to the NVDA log</h2>
+<p>Each use of Ctrl+Shift+J writes one line with counts and times only. NVDA+Ctrl+Shift+J writes the roles of the elements around the focus, and names only for Claude's own toolbars, regions, toggle buttons and close buttons. It never writes document titles, session names or text from the page.</p>
+
+<h2>Contact</h2>
+<p>Written and maintained by Eyal Sonsino, Sontech. Contact form: <a href="https://sontech.co.il/en/contact/">sontech.co.il/en/contact</a>. Source code and issues: <a href="https://github.com/Eyalson/claude-desktop-access">github.com/Eyalson/claude-desktop-access</a>.</p>
+
+<h2>License</h2>
+<p>Copyright (C) 2026 Sontech - Eyal Sonsino. Covered by the GNU General Public License, version 2.</p>
+<p>Claude Desktop Access is an independent add-on. It is not affiliated with, endorsed by or sponsored by Anthropic. Claude is a trademark of Anthropic, used here only to name the application the add-on works with.</p>
+</main>
+</body>
+</html>

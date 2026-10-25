@@ -1,0 +1,21 @@
+# Build output
+dist/
+*.nvda-addon
+*.mo
+__pycache__/
+*.pyc
+
+# Local diagnostics: UI dumps that hold session names and chat text. Never commit.
+out/
+tools/uia-*.ps1
+
+# Local planning pages
+plan*.html
+
+# Claude Code settings
+.claude/
+
+# Secrets
+.env*
+!.env.example
+*.pem

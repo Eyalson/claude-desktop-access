@@ -1,0 +1,42 @@
+# Hebrew translation of Claude Desktop Access.
+# Copyright (C) 2026 Sontech - Eyal Sonsino.
+# This file is covered by the GNU General Public License, version 2.
+msgid ""
+msgstr ""
+"Project-Id-Version: claudeAccess 0.7.0\n"
+"Language: he\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Translators: announced after a panel was closed. {panel} is its name, such as Artifacts.
+msgid "Closed: {panel}"
+msgstr "נסגר: {panel}"
+
+#. Translators: announced when no open panel was found.
+msgid "No panel to close"
+msgstr "לא נמצא פאנל לסגירה"
+
+#. Translators: the prompt above the list of open panels.
+msgid "Choose a panel to close"
+msgstr "בחר פאנל לסגירה"
+
+#. Translators: the title of the dialog that lists the open panels.
+msgid "Close a panel in Claude"
+msgstr "סגירת פאנל ב-Claude"
+
+#. Translators: announced when pressing the close button did not work. {panel} is its name.
+msgid "Could not close: {panel}"
+msgstr "הסגירה נכשלה: {panel}"
+
+#. Translators: announced after the diagnostics command wrote to the NVDA log.
+msgid "Diagnostics written to the NVDA log"
+msgstr "פרטי האבחון נכתבו ללוג של NVDA"
+
+#. Translators: describes the close panel command in NVDA's Input Gestures dialog.
+msgid "Closes the panel that has the focus, or lists the open panels"
+msgstr "סוגר את הפאנל שהפוקוס בתוכו, או מציג רשימה של הפאנלים הפתוחים"
+
+#. Translators: describes the diagnostics command in NVDA's Input Gestures dialog.
+msgid "Writes diagnostics about the focus and the panels to the NVDA log"
+msgstr "כותב ללוג של NVDA פרטי אבחון על הפוקוס ועל הפאנלים"
