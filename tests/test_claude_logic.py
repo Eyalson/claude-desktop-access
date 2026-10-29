@@ -46,6 +46,7 @@ def _install_stubs():
     class _Log:
         def info(self, *a, **k): pass
         def debugWarning(self, *a, **k): pass
+        def io(self, *a, **k): pass
 
     def initTranslation():
         sys._getframe(1).f_globals["_"] = lambda text: text
@@ -692,6 +693,133 @@ class ScriptTests(unittest.TestCase):
         self.assertIn("Close split view", text)
         self.assertIn("outline of root", text)
         self.assertEqual(self.spoken, ["Diagnostics written to the NVDA log"])
+
+
+class FakeUIA(Node):
+    """Stands in for an NVDA UI Automation object."""
+
+
+class MouseReadingTests(unittest.TestCase):
+    """Reading artifact content under the mouse where NVDA stops at the artifact's document."""
+
+    def setUp(self):
+        self.item = FakeUIA(Role.STATICTEXT, "private paragraph")
+        self.doc = Node(Role.DOCUMENT, "My artifact title")
+        self.content = Node(Role.REGION, "User-generated artifact content", self.doc)
+        self.panel = Node(Role.REGION, "Artifacts", self.content)
+        self.prompt = Node(Role.EDITABLETEXT, "Prompt")
+        Node(Role.DOCUMENT, "Claude Code", Node(Role.GROUP, "", self.panel, self.prompt))
+        self.uia_doc = FakeUIA(Role.DOCUMENT, "My artifact title")
+        self.uia_doc.parent = self.content
+        self.found = self.item
+        self.spoken, self.logged, self.passed, self.queued = [], [], [], []
+
+        handler = types.SimpleNamespace(
+            clientObject=types.SimpleNamespace(ElementFromPointBuildCache=lambda point, cache: self.found),
+            baseCacheRequest=None,
+            MTAThreadQueue=types.SimpleNamespace(put_nowait=lambda fn: (self.queued.append(fn), fn())),
+        )
+        sys.modules["UIAHandler"] = types.SimpleNamespace(handler=handler)
+        sys.modules["NVDAObjects"] = types.ModuleType("NVDAObjects")
+        sys.modules["NVDAObjects.UIA"] = types.SimpleNamespace(UIA=self.makeUIA)
+        sys.modules["speech"] = types.SimpleNamespace(
+            cancelSpeech=lambda: None,
+            speakObject=lambda obj, reason=None: self.spoken.append(obj.name),
+        )
+        claude.controlTypes.OutputReason = types.SimpleNamespace(MOUSE="mouse")
+        claude.log.io = lambda *a, **k: self.logged.append(a[0] % a[1:])
+        self.module = claude.AppModule()
+
+    def makeUIA(self, UIAElement=None):
+        # Called both as the class in isinstance checks and as the constructor.
+        return UIAElement
+
+    def tearDown(self):
+        for name in ("UIAHandler", "NVDAObjects", "NVDAObjects.UIA", "speech"):
+            sys.modules.pop(name, None)
+
+    def move(self, obj, x=10, y=20):
+        self.module._lastMouseCheck = 0.0
+        self.module.event_mouseMove(obj, lambda: self.passed.append(obj), x=x, y=y)
+
+    def test_stuck_on_artifact_document_reads_the_element_at_the_point(self):
+        sys.modules["NVDAObjects.UIA"] = types.SimpleNamespace(UIA=FakeUIA)
+        claude_uia = sys.modules["NVDAObjects.UIA"]
+        claude_uia.UIA = FakeUIA
+        self.found = self.item
+        self.patch_constructor()
+        self.move(self.doc)
+        self.assertEqual(self.spoken, ["private paragraph"])
+        self.assertEqual(self.passed, [self.doc])
+
+    def patch_constructor(self):
+        # isinstance needs a real class; construction must return the found element.
+        original = claude.elementFromPoint
+
+        def elementFromPoint(x, y, timeout=claude.UIA_WAIT_SECONDS):
+            return self.found
+        claude.elementFromPoint = elementFromPoint
+        self.addCleanup(setattr, claude, "elementFromPoint", original)
+
+    def test_outside_artifacts_nothing_is_added(self):
+        self.patch_constructor()
+        self.move(self.prompt)
+        self.assertEqual(self.spoken, [])
+        self.assertEqual(self.passed, [self.prompt])
+
+    def test_ui_automation_document_is_left_to_nvda(self):
+        sys.modules["NVDAObjects.UIA"] = types.SimpleNamespace(UIA=FakeUIA)
+        self.patch_constructor()
+        self.move(self.uia_doc)
+        self.assertEqual(self.spoken, [])
+
+    def test_same_element_is_read_once(self):
+        sys.modules["NVDAObjects.UIA"] = types.SimpleNamespace(UIA=FakeUIA)
+        self.patch_constructor()
+        self.move(self.doc)
+        self.move(self.doc)
+        self.assertEqual(self.spoken, ["private paragraph"])
+
+    def test_container_under_the_mouse_is_not_read(self):
+        sys.modules["NVDAObjects.UIA"] = types.SimpleNamespace(UIA=FakeUIA)
+        self.patch_constructor()
+        self.found = FakeUIA(Role.DOCUMENT, "My artifact title")
+        self.move(self.doc)
+        self.assertEqual(self.spoken, [])
+
+    def test_moves_are_throttled(self):
+        sys.modules["NVDAObjects.UIA"] = types.SimpleNamespace(UIA=FakeUIA)
+        self.patch_constructor()
+        self.module.event_mouseMove(self.doc, lambda: None, x=1, y=1)
+        self.found = FakeUIA(Role.STATICTEXT, "another line")
+        self.module.event_mouseMove(self.doc, lambda: None, x=2, y=2)
+        self.assertEqual(self.spoken, ["private paragraph"])
+
+    def test_log_holds_no_page_text(self):
+        sys.modules["NVDAObjects.UIA"] = types.SimpleNamespace(UIA=FakeUIA)
+        self.patch_constructor()
+        self.move(self.doc)
+        self.assertTrue(self.logged)
+        self.assertNotIn("private", "\n".join(self.logged))
+
+    def test_errors_never_break_nvda(self):
+        sys.modules["NVDAObjects.UIA"] = types.SimpleNamespace(UIA=FakeUIA)
+        original = claude.elementFromPoint
+        claude.elementFromPoint = lambda x, y, timeout=0: (_ for _ in ()).throw(RuntimeError("COM"))
+        self.addCleanup(setattr, claude, "elementFromPoint", original)
+        self.move(self.doc)
+        self.assertEqual(self.passed, [self.doc])
+        self.assertEqual(self.spoken, [])
+
+    def test_element_from_point_waits_for_the_answer(self):
+        sys.modules["NVDAObjects.UIA"] = types.SimpleNamespace(UIA=lambda UIAElement=None: UIAElement)
+        self.assertIs(claude.elementFromPoint(5, 6), self.item)
+        self.assertEqual(len(self.queued), 1)
+
+    def test_element_from_point_gives_up_after_the_timeout(self):
+        handler = sys.modules["UIAHandler"].handler
+        handler.MTAThreadQueue = types.SimpleNamespace(put_nowait=lambda fn: None)  # never answers
+        self.assertIsNone(claude.elementFromPoint(5, 6, timeout=0.01))
 
 
 class PrivacyTests(unittest.TestCase):

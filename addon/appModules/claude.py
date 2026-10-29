@@ -24,7 +24,7 @@ from scriptHandler import script
 
 addonHandler.initTranslation()
 
-VERSION = "0.7.0"
+VERSION = "0.8.0"
 log.info("claudeAccess %s loaded (%s)", VERSION, "scratchpad" if "scratchpad" in __file__.lower() else "add-on")
 
 SCRIPT_CATEGORY = "Claude Desktop Access"
@@ -536,6 +536,113 @@ def closeLikeNodes(root):
     return lines
 
 
+ARTIFACT_CONTENT_NAME = "user-generated artifact content"
+MOUSE_CHAIN_LEVELS = 6
+
+
+def isInsideArtifact(node):
+    """True when node is the artifact content frame or anything inside it."""
+    for _ in range(MAX_REAL_DEPTH):
+        if node is None or _isWindow(node):
+            return False
+        if _safeName(node).lower() == ARTIFACT_CONTENT_NAME:
+            return True
+        try:
+            node = node.parent
+        except Exception:
+            return False
+    return False
+
+
+def mouseChain(node):
+    """Roles of node and a few ancestors, innermost first. Names only where safe to log."""
+    parts = []
+    for _ in range(MOUSE_CHAIN_LEVELS):
+        if node is None:
+            break
+        parts.append(_nodeInfo(node))
+        try:
+            node = node.parent
+        except Exception:
+            break
+    return " < ".join(parts)
+
+
+MOUSE_CHECK_INTERVAL = 0.1
+UIA_WAIT_SECONDS = 0.15
+# Whole-page containers say nothing useful under the mouse.
+CONTAINER_ROLES = {"DOCUMENT", "INTERNALFRAME", "PANE", "WINDOW"}
+
+
+def _isUIAObject(node):
+    try:
+        from NVDAObjects.UIA import UIA
+    except Exception:
+        return False
+    return isinstance(node, UIA)
+
+
+def isStuckOnArtifactDocument(node):
+    """NVDA got the artifact's document through IAccessible2, not an element inside it."""
+    try:
+        if _roleName(node) != "DOCUMENT" or _isUIAObject(node):
+            return False
+    except Exception:
+        return False
+    return isInsideArtifact(node)
+
+
+def elementFromPoint(x, y, timeout=UIA_WAIT_SECONDS):
+    """The UI Automation element at a screen point, as an NVDA object, or None.
+
+    The hit test runs on NVDA's UI Automation thread. This waits for its answer, up to
+    the timeout, so the result always belongs to this point and never to an earlier one.
+    """
+    import threading
+    from ctypes.wintypes import POINT
+
+    import UIAHandler
+    from NVDAObjects.UIA import UIA
+
+    handler = UIAHandler.handler
+    if handler is None:
+        return None
+    result = {}
+    done = threading.Event()
+
+    def work():
+        try:
+            result["element"] = handler.clientObject.ElementFromPointBuildCache(
+                POINT(int(x), int(y)), handler.baseCacheRequest,
+            )
+        except Exception:
+            pass
+        finally:
+            done.set()
+
+    handler.MTAThreadQueue.put_nowait(work)
+    if not done.wait(timeout) or result.get("element") is None:
+        return None
+    try:
+        return UIA(UIAElement=result["element"])
+    except Exception:
+        return None
+
+
+def isReadableUnderMouse(node):
+    try:
+        return _roleName(node) not in CONTAINER_ROLES and bool(_safeName(node) or getattr(node, "value", None))
+    except Exception:
+        return False
+
+
+def speakUnderMouse(node):
+    import speech
+
+    speech.cancelSpeech()
+    speech.speakObject(node, reason=controlTypes.OutputReason.MOUSE)
+
+
 def activate(button):
     """Press a button: default action first, then focus and Space."""
     try:
@@ -598,6 +705,38 @@ class AppModule(appModuleHandler.AppModule):
     def script_diagnose(self, gesture):
         self._writeDiagnostics()
         ui.message(MSG_LOGGED)
+
+    def event_mouseMove(self, obj, nextHandler, x=None, y=None):
+        nextHandler()
+        try:
+            self._readArtifactUnderMouse(obj, x, y)
+        except Exception:
+            log.debugWarning("claudeAccess: reading the artifact under the mouse failed", exc_info=True)
+
+    def _readArtifactUnderMouse(self, obj, x, y):
+        """Read artifact content under the mouse where NVDA stops at the artifact's frame.
+
+        Through IAccessible2, NVDA gets only the artifact's document and says nothing. UI
+        Automation finds the element at the point, so the add-on asks it and announces the
+        element. Where NVDA already reads the content, the add-on does nothing.
+        """
+        if x is None or not isStuckOnArtifactDocument(obj):
+            return
+        now = time.monotonic()
+        if now - getattr(self, "_lastMouseCheck", 0.0) < MOUSE_CHECK_INTERVAL:
+            return
+        self._lastMouseCheck = now
+        element = elementFromPoint(x, y)
+        if element is None:
+            return
+        signature = _signature(element)
+        if signature == getattr(self, "_lastMouseElement", None):
+            return
+        self._lastMouseElement = signature
+        if not isReadableUnderMouse(element):
+            return
+        log.io("claudeAccess mouse: read %s", _nodeInfo(element))
+        speakUnderMouse(element)
 
     def event_gainFocus(self, obj, nextHandler):
         # Remember where focus last was inside the page, so a later search can start there

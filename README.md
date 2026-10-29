@@ -1,6 +1,6 @@
 # Claude Desktop Access
 
-An NVDA add-on for Claude Desktop on Windows. It closes Claude's side panels with one keyboard shortcut, without hovering with the mouse and without searching for the Close button.
+An NVDA add-on that improves the accessibility of Claude Desktop on Windows for screen reader and keyboard users. It closes Claude's side panels with one keyboard shortcut, and it makes NVDA read the content of artifacts under the mouse.
 
 Claude Desktop Access is an independent add-on. It is not affiliated with, endorsed by or sponsored by Anthropic. Claude is a trademark of Anthropic, used here only to name the application the add-on works with.
 
@@ -34,6 +34,14 @@ NVDA reaches Claude's page content only by walking up from the focused element, 
 
 Reading one element through NVDA takes several milliseconds, so the add-on first looks only inside the panels that contain the focus (about 0.2 to 0.5 seconds on the author's computer). Only if that finds nothing does it scan the page, skipping the chat, the sidebar and the content of artifacts (about 1.5 to 2 seconds).
 
+### Reading artifacts under the mouse
+
+NVDA reads the content of an artifact under the mouse: text, headings and list items.
+
+Why it was needed: the content of an artifact is a separate document inside the Claude page. Through IAccessible2, NVDA often gets only that document under the mouse and says nothing. When that happens, the add-on asks UI Automation which element is at the mouse point and announces it. The hit test runs on NVDA's UI Automation thread and the add-on waits for the answer, up to 0.15 seconds, so what is read always belongs to the current point. Where NVDA already reads the content, the add-on does nothing. Each element is read once while the mouse stays on it, and the check runs at most every 0.1 seconds.
+
+Mouse tracking must be on in NVDA. NVDA+M turns it on and off.
+
 ## Requirements
 
 - NVDA 2026.1 or later. Tested with NVDA 2026.2.
@@ -51,7 +59,7 @@ Download the `.nvda-addon` file from [Releases](https://github.com/Eyalson/claud
 
 ## What is written to the NVDA log
 
-Each use of Ctrl+Shift+J writes one line with counts and times only. NVDA+Ctrl+Shift+J writes the roles of the elements around the focus, and names only for Claude's own toolbars, regions, toggle buttons and close buttons. It never writes document titles, session names or text from the page.
+Each use of Ctrl+Shift+J writes one line with counts and times only. Reading an artifact under the mouse writes the role of the element that was read, at the "input/output" log level, never its text. NVDA+Ctrl+Shift+J writes the roles of the elements around the focus, and names only for Claude's own toolbars, regions, toggle buttons and close buttons. It never writes document titles, session names or text from the page.
 
 ## Status
 

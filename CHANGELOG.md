@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.8.0] - 2026-10-29
+
+### Added
+
+- NVDA reads the content of artifacts under the mouse: text, headings and list items. Without the add-on, NVDA often stopped at the artifact's frame and said nothing.
+- The add-on asks UI Automation which element is at the mouse point and waits for the answer, up to 0.15 seconds, so what is read always belongs to the current point.
+- Where NVDA already reads the artifact under the mouse, the add-on does nothing, so nothing is read twice. Each element is read once while the mouse stays on it.
+
+### Notes
+
+- Mouse tracking must be on in NVDA. NVDA+M turns it on and off.
+- The NVDA log gets the role of the element that was read, never its text.
+- Tested with NVDA 2026.2.
+
 ## [0.7.0] - 2026-10-25
 
 First public version.

@@ -14,7 +14,7 @@
 <body>
 <main>
 <h1>Claude Desktop Access</h1>
-<p>An NVDA add-on for Claude Desktop on Windows. It closes Claude's side panels with one keyboard shortcut, without hovering with the mouse and without searching for the Close button.</p>
+<p>An NVDA add-on that improves the accessibility of Claude Desktop on Windows for screen reader and keyboard users. It closes Claude's side panels with one keyboard shortcut, and it makes NVDA read the content of artifacts under the mouse.</p>
 
 <h2>Commands</h2>
 <table>
@@ -47,6 +47,10 @@
   <li>Session details, which has no Close button. The add-on presses its toggle button, "Session rail", in the "Session tools" toolbar.</li>
 </ul>
 
+<h2>Reading artifacts under the mouse</h2>
+<p>NVDA reads the content of an artifact under the mouse: text, headings and list items. Without the add-on, NVDA often stopped at the artifact's frame and said nothing. Each element is read once while the mouse stays on it.</p>
+<p>Mouse tracking must be on in NVDA. NVDA+M turns it on and off.</p>
+
 <h2>Requirements</h2>
 <p>NVDA 2026.1 or later, tested with NVDA 2026.2. Claude Desktop for Windows. The add-on works only while Claude has the focus.</p>
 
@@ -58,7 +62,7 @@
 </ul>
 
 <h2>What is written to the NVDA log</h2>
-<p>Each use of Ctrl+Shift+J writes one line with counts and times only. NVDA+Ctrl+Shift+J writes the roles of the elements around the focus, and names only for Claude's own toolbars, regions, toggle buttons and close buttons. It never writes document titles, session names or text from the page.</p>
+<p>Each use of Ctrl+Shift+J writes one line with counts and times only. Reading an artifact under the mouse writes the role of the element that was read, never its text. NVDA+Ctrl+Shift+J writes the roles of the elements around the focus, and names only for Claude's own toolbars, regions, toggle buttons and close buttons. It never writes document titles, session names or text from the page.</p>
 
 <h2>Contact</h2>
 <p>Written and maintained by Eyal Sonsino, Sontech. Contact form: <a href="https://sontech.co.il/en/contact/">sontech.co.il/en/contact</a>. Source code and issues: <a href="https://github.com/Eyalson/claude-desktop-access">github.com/Eyalson/claude-desktop-access</a>.</p>
