@@ -2,6 +2,8 @@
 
 An NVDA add-on that improves the accessibility of Claude Desktop on Windows for screen reader and keyboard users. It closes Claude's side panels with one keyboard shortcut, and it makes NVDA read the content of artifacts under the mouse.
 
+Project page: [sontech.co.il/en/projects/claude-nvda](https://sontech.co.il/en/projects/claude-nvda/). Hebrew: [sontech.co.il/projects/claude-nvda](https://sontech.co.il/projects/claude-nvda/).
+
 Claude Desktop Access is an independent add-on. It is not affiliated with, endorsed by or sponsored by Anthropic. Claude is a trademark of Anthropic, used here only to name the application the add-on works with.
 
 ## What it does
